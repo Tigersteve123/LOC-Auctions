@@ -3,16 +3,29 @@ from scipy.optimize import minimize
 
 class FI:
     def __init__(self, Gamma_func, q_func, p_func, mu_func, f=0):
-        self.Gamma = Gamma_func
-        self.q = q_func
-        self.p = p_func
-        self.mu = mu_func
+        """
+        Gamma_func: A function of (s, A) that returns a cost
+        q_func: A function of (s, A) that returns a penalty
+        p_func: A function of s that returns a probability
+        mu_func: Expected return rate, function of s
+        """
+        # Exogenous variables
+        self.Gamma = Gamma_func  # Gamma(s, A)
+        self.q = q_func          # q(s, A)
+        self.p = p_func          # p(s)
+        self.mu = mu_func        # mu(s)
         self.f = f
+        
+        # Endogenous variables (decision variables)
         self.optimal_A = None
         self.optimal_m = None
         self.optimal_r = None
+        
+        # Auction outcome
         self.s = 0
         self.r = 0
+        
+        # Final outcomes
         self.A = 0
         self.profit = 0
         self.entry_decision = True
