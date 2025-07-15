@@ -2,56 +2,60 @@ from run_auction import Auction
 import numpy as np
 import pandas as pd
 
-def make_mu_gamma_funcs(correlation_type):
-    # boost return and reduce cost
-    if correlation_type == "high_corr":
-        return (
-            lambda s: 0.25,                      # flat 25% return
-            lambda s, A: 0.2 * s * (1 + A)       # cheaper cost of compliance
-        )
-    elif correlation_type == "low_corr":
-        return (
-            lambda s: 0.20 + 0.005 * s,          # slightly rising return
-            lambda s, A: 0.2 * s * (1 - 0.5 * A) # less penalty from A
-        )
-    elif correlation_type == "no_corr":
-        return (
-            lambda s: 0.22,                      # flat-ish return
-            lambda s, A: 0.15 * s * (1 + 0.25 * A)
-        )
+def make_mu_gamma_lists(N, correlation_type, seed=42):
+    np.random.seed(seed)
+    base_returns = np.random.uniform(0.05, 0.2, size=N)  # c1 values
+    mus = []
+    Gammas = []
 
+    if correlation_type == "positive_corr":
+        # High return coefficient → high cost coefficient
+        cost_coeffs = base_returns * 2 + 0.1  # e.g., c2 = 2 * c1 + 0.1
+    elif correlation_type == "negative_corr":
+        # High return coefficient → low cost coefficient
+        cost_coeffs = 0.6 - 2 * base_returns  # c2 = decreasing in c1
+    elif correlation_type == "no_corr":
+        # Independent cost coefficients
+        cost_coeffs = np.random.uniform(0.2, 0.5, size=N)
+    else:
+        raise ValueError("Unknown correlation_type")
+
+    for c1, c2 in zip(base_returns, cost_coeffs):
+        # Expected return function: mu(s) = c1 * ln(s + 1)
+        mus.append(lambda s, c1=c1: c1 * np.log(s + 1))
+        # Cost function: Gamma(s, A) = c2 * s * (exp(A) - 1)
+        Gammas.append(lambda s, A, c2=c2: c2 * s * (np.exp(A) - 1))
+
+    return mus, Gammas
 
 
 def test_scenario(correlation_type):
     N = 5
-    
     total_funds = 100
-    rate_floor = 0.01  # loosened floor to let more bids qualify
+    rate_floor = 0.05
 
-    mu_func, Gamma_func = make_mu_gamma_funcs(correlation_type)
+    mus, Gammas = make_mu_gamma_lists(N, correlation_type)
 
-    # gentler audit and penalty settings
     q_func = lambda s, A: 2 * (1 - A) * s
-    p_func = lambda s: 0.1
+    p_func = lambda s: min(0.01 * s, 1)
+    ps = [p_func] * N
 
     auction = Auction(
         N=N,
         q_func=q_func,
-        Gammas=[Gamma_func] * N,
-        mus=[mu_func] * N,
-        ps=[p_func] * N,
+        Gammas=Gammas,
+        mus=mus,
+        ps=ps,
         total_funds=total_funds,
         rate_floor=rate_floor
     )
     auction.run_auction()
     return auction.get_results()
 
+
 if __name__ == "__main__":
-    print("HIGH CORRELATION:")
-    print(pd.DataFrame(test_scenario("high_corr")))
+    for scenario in ["positive_corr", "negative_corr", "no_corr"]:
+        print(f"\n--- {scenario.upper()} ---")
+        df = pd.DataFrame(test_scenario(scenario))
+        print(df)
 
-    print("\nLOW CORRELATION:")
-    print(pd.DataFrame(test_scenario("low_corr")))
-
-    print("\nNO CORRELATION:")
-    print(pd.DataFrame(test_scenario("no_corr")))
