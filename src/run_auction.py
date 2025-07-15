@@ -17,7 +17,6 @@ class Auction:
         self.auction_participants.clear()
         self.winners.clear()
 
-        # entry decisions 
         print("\n--- Entry Decisions ---")
         for i, fi in enumerate(self.FIs):
             if fi.calculate_optimal_entry():
@@ -26,23 +25,41 @@ class Auction:
             else:
                 print(f"FI {i}: DID NOT ENTER (Expected profit < 0)")
 
-        # sort bids
-        self.auction_participants.sort(
-            key=lambda fi: (fi.optimal_r, fi.optimal_m), reverse=True
-        )
+        # Filter bids at or above rate floor
+        eligible_bids = [
+            fi for fi in self.auction_participants if fi.optimal_r >= self.rate_floor
+        ]
 
-        # fund allocation
-        remaining_funds = self.total_funds
-        for fi in self.auction_participants:
-            if fi.optimal_r < self.rate_floor:
-                continue
-            if remaining_funds <= 0:
+        # Sort by rate descending, then m descending
+        eligible_bids.sort(key=lambda fi: (fi.optimal_r, fi.optimal_m), reverse=True)
+
+        # Determine winners to satisfy total funds
+        allocated_funds = 0
+        clearing_bids = []
+        for fi in eligible_bids:
+            if allocated_funds >= self.total_funds:
                 break
+            clearing_bids.append(fi)
+            allocated_funds += fi.optimal_m
+
+        # No winners? Bail out
+        if not clearing_bids:
+            print("\nNo qualifying bids met the rate floor.")
+            return
+
+        # Determine uniform clearing rate: lowest rate among winners
+        clearing_rate = min(fi.optimal_r for fi in clearing_bids)
+
+        # Allocate funds
+        remaining_funds = self.total_funds
+        for fi in clearing_bids:
             allocated = min(fi.optimal_m, remaining_funds)
-            fi.set_auction_winnings(s=allocated, r=fi.optimal_r)
+            fi.set_auction_winnings(s=allocated, r=clearing_rate)  # use clearing rate
             fi.calculate_profit()
             self.winners.append(fi)
             remaining_funds -= allocated
+            if remaining_funds <= 0:
+                break
 
     def get_results(self):
         return [{
