@@ -47,7 +47,8 @@ def test_scenario(correlation_type):
         mus=mus,
         ps=ps,
         total_funds=total_funds,
-        rate_floor=rate_floor
+        rate_floor=rate_floor,
+        guess_rate_floors=True
     )
     auction.run_auction()
     return auction.get_results()

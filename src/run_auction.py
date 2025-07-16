@@ -1,10 +1,15 @@
+import numpy as np
+
 from fi import FI
 
 class Auction:
-    def __init__(self, N, q_func, Gammas, mus, ps, total_funds, rate_floor):
+    def __init__(self, N, q_func, Gammas, mus, ps, total_funds, rate_floor, guess_rate_floors=False):
+        r_lows = [0] * N
+        if guess_rate_floors:
+            r_lows = [rate_floor + np.random.normal(scale=.01) for i in range(N)]
         assert len(Gammas) == len(mus) == len(ps) == N
         self.FIs = [
-            FI(Gammas[i], q_func, ps[i], mus[i])
+            FI(Gammas[i], q_func, ps[i], mus[i], r_lows[i])
             for i in range(N)
         ]
         self.q_func = q_func
