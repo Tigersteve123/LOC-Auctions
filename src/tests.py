@@ -9,10 +9,10 @@ def make_mu_gamma_lists(N, correlation_type, seed=42):
     Gammas = []
 
     if correlation_type == "positive_corr":
-        # High return coefficient → high cost coefficient
+        # High return coefficient -> high cost coefficient
         cost_coeffs = base_returns * 2 + 0.1  # e.g., c2 = 2 * c1 + 0.1
     elif correlation_type == "negative_corr":
-        # High return coefficient → low cost coefficient
+        # High return coefficient -> low cost coefficient
         cost_coeffs = 0.6 - 2 * base_returns  # c2 = decreasing in c1
     elif correlation_type == "no_corr":
         # Independent cost coefficients
