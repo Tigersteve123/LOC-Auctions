@@ -2,32 +2,17 @@ import numpy as np
 from scipy.optimize import minimize
 
 class FI:
-    def __init__(self, Gamma_func, q_func, p_func, mu_func, r_low=0, f=0):
-        """
-        Gamma_func: A function of (s, A) that returns a cost
-        q_func: A function of (s, A) that returns a penalty
-        p_func: A function of s that returns a probability
-        mu_func: Expected return rate, function of s
-        """
-        # Exogenous variables
-        self.Gamma = Gamma_func  # Gamma(s, A)
-        self.q = q_func          # q(s, A)
-        self.p = p_func          # p(s)
-        self.mu = mu_func        # mu(s)
-        self.r_low = r_low
+    def __init__(self, Gamma_func, q_func, p_func, mu_func, f=0):
+        self.Gamma = Gamma_func
+        self.q = q_func
+        self.p = p_func
+        self.mu = mu_func
         self.f = f
-        
-        
-        # Endogenous variables (decision variables)
         self.optimal_A = None
         self.optimal_m = None
         self.optimal_r = None
-        
-        # Auction outcome
         self.s = 0
         self.r = 0
-        
-        # Final outcomes
         self.A = 0
         self.profit = 0
         self.entry_decision = True
@@ -54,13 +39,13 @@ class FI:
     def calculate_optimal_bid(self):
         def objective(x):
             A, r, m = x
-            if not (0 <= A <= 1 and r >= self.r_low and m >= 0):
+            if not (0 <= A <= 1 and r >= 0 and m >= 0):
                 return np.inf
             s = m
             return -self.calculate_expected_profit_risk_neutral(A, s, r)
         x0 = [0.5, 0.05, 5]  # lower guess for m, firms weren't entering with high m
         #x0 = [0.5, 0.05, 10]
-        bounds = [(0, 1), (self.r_low, 1), (1, 20)]  # cap r and m
+        bounds = [(0, 1), (0.01, 0.5), (1, 20)]  # cap r and m
         #bounds = [(0, 1), (0.01, 1.0), (1e-3, None)]
         res = minimize(objective, x0=x0, bounds=bounds, method='L-BFGS-B')
         if res.success:

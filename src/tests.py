@@ -1,6 +1,7 @@
 from run_auction import Auction
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 seed = 42
 np.random.seed(seed)
@@ -52,11 +53,53 @@ def test_scenario(correlation_type, q_func, p_func, total_funds, rate_floor, N):
 if __name__ == "__main__":
     N = 5
     total_funds = 100
-    rate_floor = 0.05
+    rate_floor = 0.01
     q_func = lambda s, A: 2 * (1 - A) * s
     p_func = lambda s: min(0.01 * s, 1)
-    for scenario in ["positive_corr", "negative_corr", "no_corr"]:
-        print(f"\n--- {scenario.upper()} ---")
-        df = pd.DataFrame(test_scenario(scenario, q_func, p_func, total_funds, rate_floor, N))
-        print(df)
+    num_runs = 1000
+
+    scenario = "positive_corr"  #change to "negative_corr" or "no_corr" for other scenarios
+
+    print(f"Parameters:\nN={N}, total_funds={total_funds}, rate_floor={rate_floor}, scenario={scenario}")
+
+    all_profits = []
+    all_allocations = []
+
+    skipped = 0
+    for run in range(num_runs):
+        np.random.seed(run) #ensure reproducibility
+        df = pd.DataFrame(test_scenario("positive_corr", q_func, p_func, total_funds, rate_floor, N))
+
+        if df.empty:
+            skipped += 1
+            continue #skip if no winners
+        all_profits.extend(df["profit"].tolist())
+        all_allocations.extend(df["allocated"].tolist())
+    
+    print(f"\nSkipped {skipped} auctions out of {num_runs} due to no qualifying bids.")
+
+        
+
+    #histogram of profits 
+    plt.hist(all_profits, bins = 30, alpha = 0.7)
+    plt.title("Profit Distribution")
+    plt.xlabel("Profit")
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.show()
+
+    #histogram of allocations
+    plt.hist(all_allocations, bins = 30, alpha = 0.7)
+    plt.title("Allocation of Funds")
+    plt.xlabel("Allocated Funds")
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.show()
+
+
+
+    # for scenario in ["positive_corr", "negative_corr", "no_corr"]:
+    #     print(f"\n--- {scenario.upper()} ---")
+    #     df = pd.DataFrame(test_scenario(scenario, q_func, p_func, total_funds, rate_floor, N))
+    #     print(df)
 
