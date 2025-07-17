@@ -58,48 +58,72 @@ if __name__ == "__main__":
     p_func = lambda s: min(0.01 * s, 1)
     num_runs = 1000
 
-    scenario = "positive_corr"  #change to "negative_corr" or "no_corr" for other scenarios
+    scenario = "positive_corr"  # change to "negative_corr" or "no_corr" for other scenarios
 
     print(f"Parameters:\nN={N}, total_funds={total_funds}, rate_floor={rate_floor}, scenario={scenario}")
 
     all_profits = []
     all_allocations = []
+    all_dfs = []  
 
     skipped = 0
     for run in range(num_runs):
-        np.random.seed(run) #ensure reproducibility
-        df = pd.DataFrame(test_scenario("positive_corr", q_func, p_func, total_funds, rate_floor, N))
+        np.random.seed(run)  # ensure reproducibility
+        df = pd.DataFrame(test_scenario(scenario, q_func, p_func, total_funds, rate_floor, N))
 
         if df.empty:
             skipped += 1
-            continue #skip if no winners
+            continue  # skip if no winners
         all_profits.extend(df["profit"].tolist())
         all_allocations.extend(df["allocated"].tolist())
-    
+        all_dfs.append(df) 
+
     print(f"\nSkipped {skipped} auctions out of {num_runs} due to no qualifying bids.")
 
-        
-
-    #histogram of profits 
-    plt.hist(all_profits, bins = 30, alpha = 0.7)
+    # histogram of profits 
+    plt.hist(all_profits, bins=30, alpha=0.7)
     plt.title("Profit Distribution")
     plt.xlabel("Profit")
     plt.ylabel("Frequency")
     plt.grid(True)
     plt.show()
 
-    #histogram of allocations
-    plt.hist(all_allocations, bins = 30, alpha = 0.7)
+    # histogram of allocations
+    plt.hist(all_allocations, bins=30, alpha=0.7)
     plt.title("Allocation of Funds")
     plt.xlabel("Allocated Funds")
     plt.ylabel("Frequency")
     plt.grid(True)
     plt.show()
 
+    # master dataframe of all runs
+    # concatenate all dataframes into one
+    full_df = pd.concat(all_dfs, ignore_index=True) 
 
+    # compliance! 
+    full_df["compliance"] = full_df["A"].apply(lambda a: 1 if a > 0.5 else 0)  # compliance if A > 0.5
 
-    # for scenario in ["positive_corr", "negative_corr", "no_corr"]:
-    #     print(f"\n--- {scenario.upper()} ---")
-    #     df = pd.DataFrame(test_scenario(scenario, q_func, p_func, total_funds, rate_floor, N))
-    #     print(df)
+    # histogram of compliance decisions
+    plt.hist(full_df["compliance"], bins=[-0.5, 0.5, 1.5], edgecolor='black')
+    plt.xticks([0, 1], ["Non-Compliant", "Compliant"])
+    plt.title("Compliance Decisions")
+    plt.xlabel("Compliance")
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.show()
 
+    # scatterplot of profits vs allocation size
+    plt.scatter(full_df["allocated"], full_df["profit"], alpha=0.6)  
+    plt.title("Profit vs Allocation Size")
+    plt.xlabel("Allocated Funds")
+    plt.ylabel("Profit")
+    plt.grid(True)
+    plt.show()
+
+    # total funds allocated across all runs
+    total_allocated = full_df["allocated"].sum()
+    print(f"\nTotal Allocated Funds: {total_allocated:.2f}")
+
+    # average clearing rate 
+    average_rate = full_df["rate"].mean()
+    print(f"Average Clearing Rate: {average_rate:.4f}")
