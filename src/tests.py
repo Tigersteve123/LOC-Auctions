@@ -2,8 +2,10 @@ from run_auction import Auction
 import numpy as np
 import pandas as pd
 
-def make_mu_gamma_lists(N, correlation_type, seed=42):
-    np.random.seed(seed)
+seed = 42
+np.random.seed(seed)
+
+def make_mu_gamma_lists(N, correlation_type):
     base_returns = np.random.uniform(0.05, 0.2, size=N)  # c1 values
     mus = []
     Gammas = []
@@ -29,15 +31,8 @@ def make_mu_gamma_lists(N, correlation_type, seed=42):
     return mus, Gammas
 
 
-def test_scenario(correlation_type):
-    N = 5
-    total_funds = 100
-    rate_floor = 0.05
-
+def test_scenario(correlation_type, q_func, p_func, total_funds, rate_floor, N):
     mus, Gammas = make_mu_gamma_lists(N, correlation_type)
-
-    q_func = lambda s, A: 2 * (1 - A) * s
-    p_func = lambda s: min(0.01 * s, 1)
     ps = [p_func] * N
 
     auction = Auction(
@@ -55,8 +50,13 @@ def test_scenario(correlation_type):
 
 
 if __name__ == "__main__":
+    N = 5
+    total_funds = 100
+    rate_floor = 0.05
+    q_func = lambda s, A: 2 * (1 - A) * s
+    p_func = lambda s: min(0.01 * s, 1)
     for scenario in ["positive_corr", "negative_corr", "no_corr"]:
         print(f"\n--- {scenario.upper()} ---")
-        df = pd.DataFrame(test_scenario(scenario))
+        df = pd.DataFrame(test_scenario(scenario, q_func, p_func, total_funds, rate_floor, N))
         print(df)
 
