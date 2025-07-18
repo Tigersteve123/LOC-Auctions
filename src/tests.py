@@ -6,6 +6,19 @@ import matplotlib.pyplot as plt
 seed = 42
 np.random.seed(seed)
 
+def mu_factory(c1):
+    """Returns a mu(s) = c1 * log(s + 1) function bound to this c1."""
+    def mu(s):
+        return c1 * np.log(s + 1)
+    return mu
+
+def Gamma_factory(c2):
+    """Returns a Gamma(s, A) = c2 * s * (exp(A) - 1) function bound to this c2."""
+    def Gamma(s, A):
+        return c2 * s * (np.exp(A) - 1)
+    return Gamma
+
+
 def make_mu_gamma_lists(N, correlation_type):
     base_returns = np.random.uniform(0.05, 0.2, size=N)  # c1 values
     mus = []
@@ -24,10 +37,10 @@ def make_mu_gamma_lists(N, correlation_type):
         raise ValueError("Unknown correlation_type")
 
     for c1, c2 in zip(base_returns, cost_coeffs):
+        mus.append(mu_factory(c1))
+        Gammas.append(Gamma_factory(c2))
         # Expected return function: mu(s) = c1 * ln(s + 1)
-        mus.append(lambda s, c1=c1: c1 * np.log(s + 1))
         # Cost function: Gamma(s, A) = c2 * s * (exp(A) - 1)
-        Gammas.append(lambda s, A, c2=c2: c2 * s * (np.exp(A) - 1))
 
     return mus, Gammas
 
@@ -79,6 +92,15 @@ if __name__ == "__main__":
         all_dfs.append(df) 
 
     print(f"\nSkipped {skipped} auctions out of {num_runs} due to no qualifying bids.")
+
+    #combined results 
+    full_df = pd.concat(all_dfs, ignore_index=True)
+    full_df["compliance"] = (full_df["A"] > 0.5).astype(int)  # compliance if A > 0.5
+
+    #sanity checks
+    print(f"Average action A: {full_df['A'].mean():.4f}")
+    print(f"Average profit: {full_df['profit'].mean():.4f}")   
+    print(f"Average rate: {full_df['rate'].mean():.4f}\n")
 
     # histogram of profits 
     plt.hist(all_profits, bins=30, alpha=0.7)
