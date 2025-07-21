@@ -66,12 +66,12 @@ def test_scenario(correlation_type, q_func, p_func, total_funds, rate_floor, N):
 if __name__ == "__main__":
     N = 5
     total_funds = 100
-    rate_floor = 0.01
+    rate_floor = 0.05
     q_func = lambda s, A: 2 * (1 - A) * s
     p_func = lambda s: min(0.01 * s, 1)
     num_runs = 1000
 
-    scenario = "positive_corr"  # change to "negative_corr" or "no_corr" for other scenarios
+    scenario = "no_corr"  # change to "negative_corr" or "no_corr" for other scenarios
 
     print(f"Parameters:\nN={N}, total_funds={total_funds}, rate_floor={rate_floor}, scenario={scenario}")
 

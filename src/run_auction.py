@@ -18,17 +18,17 @@ class Auction:
         self.auction_participants = []
         self.winners = []
 
-    def run_auction(self):
+    def run_auction(self, print_results=False):
         self.auction_participants.clear()
         self.winners.clear()
 
-        print("\n--- Entry Decisions ---")
+        if print_results: print("\n--- Entry Decisions ---")
         for i, fi in enumerate(self.FIs):
             if fi.calculate_optimal_entry():
-                print(f"FI {i}: ENTERED with m={fi.optimal_m:.2f}, r={fi.optimal_r:.4f}, A={fi.optimal_A:.2f}")
+                if print_results: print(f"FI {i}: ENTERED with m={fi.optimal_m:.2f}, r={fi.optimal_r:.4f}, A={fi.optimal_A:.2f}")
                 self.auction_participants.append(fi)
             else:
-                print(f"FI {i}: DID NOT ENTER (Expected profit < 0)")
+                if print_results: print(f"FI {i}: DID NOT ENTER (Expected profit < 0)")
 
         # Filter bids at or above rate floor
         eligible_bids = [
@@ -49,7 +49,7 @@ class Auction:
 
         # No winners? Bail out
         if not clearing_bids:
-            print("\nNo qualifying bids met the rate floor.")
+            if print_results: print("\nNo qualifying bids met the rate floor.")
             return
 
         # Determine uniform clearing rate: lowest rate among winners
