@@ -15,7 +15,7 @@ def mu_factory(c1):
 def Gamma_factory(c2):
     """Returns a Gamma(s, A) = c2 * s * (exp(A) - 1) function bound to this c2."""
     def Gamma(s, A):
-        return c2 * s * (np.exp(A) - 1)
+        return c2 * np.exp(s/100) * (np.exp(A) - 1)
     return Gamma
 
 
@@ -64,14 +64,14 @@ def test_scenario(correlation_type, q_func, p_func, total_funds, rate_floor, N):
 
 
 if __name__ == "__main__":
-    N = 5
+    N = 10
     total_funds = 100
-    rate_floor = 0.05
+    rate_floor = 0.01
     q_func = lambda s, A: 2 * (1 - A) * s
     p_func = lambda s: min(0.01 * s, 1)
     num_runs = 1000
 
-    scenario = "no_corr"  # change to "negative_corr" or "no_corr" for other scenarios
+    scenario = "positive_corr"  # change to "negative_corr" or "no_corr" for other scenarios
 
     print(f"Parameters:\nN={N}, total_funds={total_funds}, rate_floor={rate_floor}, scenario={scenario}")
 
@@ -122,17 +122,14 @@ if __name__ == "__main__":
     # concatenate all dataframes into one
     full_df = pd.concat(all_dfs, ignore_index=True) 
 
-    # compliance! 
-    full_df["compliance"] = full_df["A"].apply(lambda a: 1 if a > 0.5 else 0)  # compliance if A > 0.5
-
-    # histogram of compliance decisions
-    plt.hist(full_df["compliance"], bins=[-0.5, 0.5, 1.5], edgecolor='black')
-    plt.xticks([0, 1], ["Non-Compliant", "Compliant"])
-    plt.title("Compliance Decisions")
-    plt.xlabel("Compliance")
+    # Plot histogram of all compliance decision scores
+    plt.hist(full_df["A"], bins=20, edgecolor='black')  # Adjust bin count as needed
+    plt.title("Distribution of Compliance Scores")
+    plt.xlabel("Compliance Amount (A)")
     plt.ylabel("Frequency")
     plt.grid(True)
     plt.show()
+
 
     # scatterplot of profits vs allocation size
     plt.scatter(full_df["allocated"], full_df["profit"], alpha=0.6)  
@@ -142,9 +139,10 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.show()
 
-    # total funds allocated across all runs
-    total_allocated = full_df["allocated"].sum()
-    print(f"\nTotal Allocated Funds: {total_allocated:.2f}")
+    # average total allocation per run
+    total_allocated_per_run = [df["allocated"].sum() for df in all_dfs]
+    average_allocated_per_run = np.mean(total_allocated_per_run)
+    print(f"\nAverage Total Allocation per Run: {average_allocated_per_run:.2f}")
 
     # average clearing rate 
     average_rate = full_df["rate"].mean()
