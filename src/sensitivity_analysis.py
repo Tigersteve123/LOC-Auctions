@@ -9,16 +9,17 @@ import matplotlib.cm as cm
 # parameter sweep values
 N_values = [5, 10]
 total_funds_values = [50, 100]
-rate_floor_values = [0.01, 0.05]
+rate_floor_values = [0.01, 0.05, 0.1]
 
 # define penalty and detection probability functions
 def q_func_linear(s, A): return 2 * (1 - A) * s
 def q_func_quadratic(s, A): return 2 * (1 - A)**2 * s
 def p_func_linear(s): return min(0.01 * s, 1)
-def p_func_flat(s): return 0.05
+def p_func_flat(s): return 0.5
+def p_func_full(s): return 1
 
 q_funcs = [("linear", q_func_linear), ("quadratic", q_func_quadratic)]
-p_funcs = [("linear", p_func_linear), ("flat", p_func_flat)]
+p_funcs = [("linear", p_func_linear), ("flat", p_func_flat), ("full", p_func_full)]
 
 # simulation setup
 scenario = "positive_corr"
@@ -63,7 +64,7 @@ print("\n=== Parameter Sweep Summary ===")
 print(summary_df)
 
 # save to CSV
-# summary_df.to_csv("auction_grid_summary.csv", index=False)
+summary_df.to_csv("auction_grid_summary.csv", index=False)
 
 # -------- Plotting Section --------
 # Color-coded plots with unique (RF, QFunc, PFunc) combinations
@@ -77,6 +78,7 @@ colors = cm.get_cmap('tab20').colors
 color_map = {label: colors[i % len(colors)] for i, label in enumerate(unique_labels)}
 
 for outcome in outcomes:
+    break # Don't generate graphs'
     for param in parameters:
         plt.figure(figsize=(7, 5))
         seen_labels = set()

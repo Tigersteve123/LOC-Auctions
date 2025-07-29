@@ -15,7 +15,7 @@ def mu_factory(c1):
 def Gamma_factory(c2):
     """Returns a Gamma(s, A) = c2 * s * (exp(A) - 1) function bound to this c2."""
     def Gamma(s, A):
-        return c2 * np.exp(s/100) * (np.exp(A) - 1)
+        return c2 * np.exp(s/10) * (np.exp(A) - 1)
     return Gamma
 
 
