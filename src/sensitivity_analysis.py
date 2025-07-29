@@ -64,7 +64,7 @@ print("\n=== Parameter Sweep Summary ===")
 print(summary_df)
 
 # save to CSV
-summary_df.to_csv("auction_grid_summary.csv", index=False)
+#summary_df.to_csv("../Results/auction_grid_summary.csv", index=False)
 
 # -------- Plotting Section --------
 # Color-coded plots with unique (RF, QFunc, PFunc) combinations
@@ -78,7 +78,7 @@ colors = cm.get_cmap('tab20').colors
 color_map = {label: colors[i % len(colors)] for i, label in enumerate(unique_labels)}
 
 for outcome in outcomes:
-    break # Don't generate graphs'
+    break # Don't generate graphs
     for param in parameters:
         plt.figure(figsize=(7, 5))
         seen_labels = set()
