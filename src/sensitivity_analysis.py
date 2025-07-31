@@ -3,37 +3,33 @@ from tests import test_scenario
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from itertools import product
-import matplotlib.cm as cm
 
-# parameter sweep values
-N_values = [5, 10]
-total_funds_values = [50, 100]
-rate_floor_values = [0.01, 0.05, 0.1]
-
-# define penalty and detection probability functions
-def q_func_linear(s, A): return 2 * (1 - A) * s
-def q_func_quadratic(s, A): return 2 * (1 - A)**2 * s
-def p_func_linear(s): return min(0.01 * s, 1)
-def p_func_flat(s): return 0.5
-def p_func_full(s): return 1
-
-q_funcs = [("linear", q_func_linear), ("quadratic", q_func_quadratic)]
-p_funcs = [("linear", p_func_linear), ("flat", p_func_flat), ("full", p_func_full)]
-
-# simulation setup
+# fixed model setup
+N = 10
+total_funds = 100
+rate_floor = 0.02
 scenario = "positive_corr"
 num_runs = 100
+
+# fixed penalty function (linear form)
+def q_func(s, A):
+    return 2 * (1 - A) * s
+
+# sweep over flat audit probabilities from 0.00 to 1.00 in steps of 0.05
+audit_probs = np.arange(0.0, 1.05, 0.05)
+
 results_summary = []
 
-# sweep over all parameter combinations
-for N, funds, floor, (q_label, q_func), (p_label, p_func) in product(N_values, total_funds_values, rate_floor_values, q_funcs, p_funcs):
+for audit_p in audit_probs:
+    def p_func(s, p=audit_p):
+        return p  # flat audit rate
+
     all_profits, all_allocs, all_As, all_rates = [], [], [], []
 
     for run in range(num_runs):
         np.random.seed(run)
         try:
-            df = pd.DataFrame(test_scenario(scenario, q_func, p_func, funds, floor, N))
+            df = pd.DataFrame(test_scenario(scenario, q_func, p_func, total_funds, rate_floor, N))
             if df.empty:
                 continue
             all_profits.append(df["profit"].mean())
@@ -47,53 +43,30 @@ for N, funds, floor, (q_label, q_func), (p_label, p_func) in product(N_values, t
         continue
 
     results_summary.append({
-        "N": N,
-        "TotalFunds": funds,
-        "RateFloor": floor,
-        "QFunc": q_label,
-        "PFunc": p_label,
+        "AuditProb": audit_p,
         "AvgProfit": np.mean(all_profits),
         "AvgAllocation": np.mean(all_allocs),
         "AvgA": np.mean(all_As),
         "AvgRate": np.mean(all_rates)
     })
 
-# compile into dataframe
+# Create results dataframe
 summary_df = pd.DataFrame(results_summary)
-print("\n=== Parameter Sweep Summary ===")
+print("\n=== Audit Probability Sweep Summary ===")
 print(summary_df)
 
-# save to CSV
-#summary_df.to_csv("../Results/auction_grid_summary.csv", index=False)
+# Optional: Save to CSV
+# summary_df.to_csv("audit_prob_sweep_summary.csv", index=False)
 
-# -------- Plotting Section --------
-# Color-coded plots with unique (RF, QFunc, PFunc) combinations
-
+# plotting results
 outcomes = ["AvgProfit", "AvgAllocation", "AvgA", "AvgRate"]
-parameters = ["N", "TotalFunds", "RateFloor"]
-
-# generate color map based on unique labels
-unique_labels = summary_df.apply(lambda row: f'RF={row["RateFloor"]}, Q={row["QFunc"]}, P={row["PFunc"]}', axis=1).unique()
-colors = cm.get_cmap('tab20').colors
-color_map = {label: colors[i % len(colors)] for i, label in enumerate(unique_labels)}
 
 for outcome in outcomes:
-    break # Don't generate graphs
-    for param in parameters:
-        plt.figure(figsize=(7, 5))
-        seen_labels = set()
-        for _, row in summary_df.iterrows():
-            label = f'RF={row["RateFloor"]}, Q={row["QFunc"]}, P={row["PFunc"]}'
-            color = color_map[label]
-            if label not in seen_labels:
-                plt.scatter(row[param], row[outcome], color=color, label=label)
-                seen_labels.add(label)
-            else:
-                plt.scatter(row[param], row[outcome], color=color)
-        plt.title(f"{outcome} vs {param}")
-        plt.xlabel(param)
-        plt.ylabel(outcome)
-        plt.grid(True)
-        plt.legend(fontsize=7, loc='best')
-        plt.tight_layout()
-        plt.show()
+    plt.figure(figsize=(7, 5))
+    plt.plot(summary_df["AuditProb"], summary_df[outcome], marker='o')
+    plt.title(f"{outcome} vs Audit Probability")
+    plt.xlabel("Audit Probability")
+    plt.ylabel(outcome)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
